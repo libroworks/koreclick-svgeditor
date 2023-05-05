@@ -9,15 +9,26 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:koreclick-svgeditor.helloWorld"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "customEditors": [
+      {
+        "viewType": "koreclick-svgeditor.svgedit",
+        "displayName": "koreclick-svgeditor",
+        "selector": [
+          {
+            "filenamePattern": "*.svg"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
     "commands": [
       {
         "command": "koreclick-svgeditor.helloWorld",
-        "title": "Hello World"
+        "title": "Hello World",
+        "category": "koreclick-svgeditor"
       }
     ]
   },
