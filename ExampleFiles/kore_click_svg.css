@@ -1,0 +1,37 @@
+@charset "utf-8";
+
+.text1 {
+  font-size: 3px;
+  fill: #000;
+  text-anchor: start;
+  transform: translateY(3px);
+}
+.tspan1 {
+  fill: #f00;
+}
+
+.rect1 {
+  stroke: #000;
+  stroke-width: 0.5px;
+  fill: transparent;
+}
+
+.rect2 {
+  stroke: #f00;
+  stroke-width: 0.25px;
+  fill: transparent;
+  rx: 1px;
+}
+
+.rect3 {
+  stroke: #f00;
+  stroke-width: 0.25px;
+  fill: #fff;
+  rx: 1px;
+}
+
+.line1 {
+  stroke: #f00;
+  stroke-width: 0.25px;
+  fill: transparent;
+}
