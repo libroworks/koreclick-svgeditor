@@ -1,0 +1,53 @@
+body {
+  justify-content: center;
+  align-items: center;
+  margin: 1em 2em;
+  background-color: #fff;
+}
+
+.notes {
+  background: #888;
+}
+
+.kc-container {
+  display: grid;
+  grid-template-columns: 15% auto;
+  grid-template-rows: auto 20px;
+  grid-gap: 4px;
+  block-size: 95vh;
+}
+
+.kc-elemlist {
+  grid-column: 1;
+  grid-row: 1/3;
+  background: #eee;
+}
+
+.kc-inspector {
+  display: flex;
+  background-color: #eee;
+  column-gap: 4px;
+}
+.kc-inspector label {
+  padding-block: 6px;
+}
+.kc-inspector input {
+  inline-size: 4em;
+}
+#kcins-class,
+#kcins-imgpath {
+  inline-size: fit-content;
+}
+
+.kc-console {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+}
+
+.kc-toolbox {
+  display: flex;
+}
+button {
+  border: solid 1px #fff;
+}
