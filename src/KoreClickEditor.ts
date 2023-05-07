@@ -36,7 +36,8 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
       webviewPanel.webview.postMessage({
         type: "update",
         text: document.getText(),
-        svguri: `${KoreClickEditorProvider.baseUrl}test.svg`,
+        svguri: document.uri.toString(),
+        // `${KoreClickEditorProvider.baseUrl}test.svg`,
         // document.uri.toString(),
       });
     }
@@ -129,19 +130,33 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
               <input id="kcins-x2" type="number" step="0.1" placeholder="0"/>
               <label>y2</label>
               <input id="kcins-y2" type="number" step="0.1" placeholder="0"/>
+              <label>x3</label>
+              <input id="kcins-x3" type="number" step="0.1" placeholder="0"/>
+              <label>y3</label>
+              <input id="kcins-y3" type="number" step="0.1" placeholder="0"/>
               <label>w</label>
               <input id="kcins-w" type="number" step="0.1" placeholder="0"/>
               <label>h</label>
               <input id="kcins-h" type="number" step="0.1" placeholder="0"/>
-              <label>imgsrc</label>
-              <input id="kcins-imgpath" type="file" placeholder="class name"/>
+              <div class="kc-console-row">
+                <label>imgsrc</label>
+                <input id="kcins-imgpath" type="file"/>
+                <label>scale</label>
+                <input id="kcins-scale" type="number" step="0.1" placeholder="0"/>
+              </div>
+              <div class="kc-console-row">
+                <label>text</label>
+                <input id="kcins-text" type="text" placeholder="<tspan>❶</tspan>これをクリック"/>
+              </div>
             </div>
             <div class="kc-toolbox">
-              <button>LN</button>
-              <button>PL</button>
-              <button>BX</button>
-              <button>T1</button>
-              <button>T2</button>
+              <button>LINE</button>
+              <button>POLYLINE</button>
+              <button>BOX</button>
+              <button>TEXTBOX1</button>
+              <button>TEXTBOX2</button>
+              <button>IMAGE</button>
+              <button>ARROW</button>
             </div>
           </div>
         </div>

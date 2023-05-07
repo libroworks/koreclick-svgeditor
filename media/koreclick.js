@@ -7,79 +7,137 @@
 
   // @ts-ignore
   const vscode = acquireVsCodeApi();
+  let svgelems = null;
+  const enum_class = 0;
+  const enum_x1 = 1;
+  const enum_y1 = 2;
+  const enum_x2 = 3;
+  const enum_y2 = 4;
+  const enum_x3 = 5;
+  const enum_y3 = 6;
+  const enum_w = 7;
+  const enum_h = 8;
+  const enum_imgpath = 9;
+  const enum_scale = 10;
+  const enum_text = 11;
+  const parameterlist = { defs: [], image: [enum_x1, enum_y1, enum_imgpath, enum_scale], rect: [enum_class, enum_x1, enum_y1, enum_w, enum_h], text: [enum_class, enum_x1, enum_y1, enum_text], polyline: [enum_class, enum_x1, enum_y1, enum_x2, enum_y2, enum_x3, enum_y3], line: [enum_class, enum_x1, enum_y1, enum_x2, enum_y2] };
 
-  const notesContainer = /** @type {HTMLElement} */ (document.querySelector(".notes"));
-
-  // const addButtonContainer = document.querySelector(".add-button");
-  // addButtonContainer.querySelector("button").addEventListener("click", () => {
-  //   vscode.postMessage({
-  //     type: "add",
-  //   });
-  // });
-
-  const errorContainer = document.createElement("div");
-  document.body.appendChild(errorContainer);
-  errorContainer.className = "error";
-  errorContainer.style.display = "none";
-
-  /**
-   * Render the document in the webview.
+  /* Render the document in the webview.
    */
   function updateContent(/** @type {string} */ text, /** @type {string} */ svguri) {
-    // console.log(text);
+    // SVGを表示
     console.log(svguri);
     const imageSrcUtf8 = `data:image/svg+xml;utf-8,${encodeURIComponent(text)}`.replace(/\r|\n/g, "");
-    // console.log(imageSrcUtf8);
 
     const img_svg = /** @type {HTMLElement} */ (document.querySelector("#img_svg"));
     img_svg.setAttribute("src", imageSrcUtf8);
-    // img_svg.setAttribute("src", svguri);
 
-    return;
+    // XML解析
+    const parser = new DOMParser();
+    const svgdom = parser.parseFromString(text, "application/xml");
+    if (svgdom.documentElement.nodeName == "parsererror") return;
+    svgelems = svgdom.children[0].children;
 
-    let json;
-    try {
-      if (!text) {
-        text = "{}";
-      }
-      json = JSON.parse(text);
-    } catch {
-      notesContainer.style.display = "none";
-      errorContainer.innerText = "Error: Document is not valid json";
-      errorContainer.style.display = "";
-      return;
+    // const serializer = new XMLSerializer();
+
+    console.log(svgelems);
+
+    // 要素を表示
+    const elemlist = /** @type {HTMLSelectElement} */ (document.querySelector("#kcins-elemlist"));
+    elemlist.innerHTML = "";
+    for (let index = 0; index < svgelems.length; index++) {
+      // @ts-ignore
+      elemlist.insertAdjacentHTML("beforeend", `<option>${index} ${svgelems[index].nodeName}.${svgelems[index].className.baseVal}</option>`);
     }
-    notesContainer.style.display = "";
-    errorContainer.style.display = "none";
 
-    // Render the scratches
-    notesContainer.innerHTML = "";
-    for (const note of json.scratches || []) {
-      const element = document.createElement("div");
-      element.className = "note";
-      notesContainer.appendChild(element);
-
-      const text = document.createElement("div");
-      text.className = "text";
-      const textContent = document.createElement("span");
-      textContent.innerText = note.text;
-      text.appendChild(textContent);
-      element.appendChild(text);
-
-      const created = document.createElement("div");
-      created.className = "created";
-      created.innerText = new Date(note.created).toUTCString();
-      element.appendChild(created);
-
-      const deleteButton = document.createElement("button");
-      deleteButton.className = "delete-button";
-      deleteButton.addEventListener("click", () => {
-        vscode.postMessage({ type: "delete", id: note.id });
+    // 要素選択イベント
+    elemlist.addEventListener("change", function (e) {
+      // console.log(e);
+      // console.log(elemlist.selectedIndex);
+      const cursvgnode = /** @type {SVGElement} */ svgelems[elemlist.selectedIndex];
+      const kcinstype = /** @type {HTMLSelectElement} */ (document.querySelector("#kcins-type"));
+      kcinstype.textContent = cursvgnode.nodeName;
+      // 入力要素の設定
+      const inputs = /** @type {NodeListOf<HTMLInputElement>} */ (document.querySelectorAll("input"));
+      console.log(inputs);
+      inputs.forEach(function (elem) {
+        elem.disabled = true;
       });
-      element.appendChild(deleteButton);
-    }
-
-    notesContainer.appendChild(addButtonContainer);
+      const enabledlist = parameterlist[cursvgnode.nodeName];
+      if (enabledlist) {
+        enabledlist.forEach(function (i) {
+          inputs[i].disabled = false;
+          switch (i) {
+            case enum_class:
+              inputs[i].value = cursvgnode.className.baseVal;
+              break;
+            case enum_x1:
+              if (["rect", "image", "text"].includes(cursvgnode.nodeName)) {
+                inputs[i].value = cursvgnode.getAttribute("x");
+              } else if (cursvgnode.nodeName === "line") {
+                inputs[i].value = cursvgnode.getAttribute("x1");
+              }
+              break;
+            case enum_y1:
+              if (["rect", "image", "text"].includes(cursvgnode.nodeName)) {
+                inputs[i].value = cursvgnode.getAttribute("y");
+              } else if (cursvgnode.nodeName === "line") {
+                inputs[i].value = cursvgnode.getAttribute("y1");
+              }
+              break;
+            case enum_x2:
+              if (cursvgnode.nodeName === "line") {
+                inputs[i].value = cursvgnode.getAttribute("x2");
+              }
+              break;
+            case enum_y2:
+              if (cursvgnode.nodeName === "line") {
+                inputs[i].value = cursvgnode.getAttribute("y2");
+              }
+              break;
+            case enum_w:
+              if (cursvgnode.nodeName === "rect") {
+                inputs[i].value = cursvgnode.getAttribute("width");
+              }
+              break;
+            case enum_h:
+              if (cursvgnode.nodeName === "rect") {
+                inputs[i].value = cursvgnode.getAttribute("height");
+              }
+              break;
+            case enum_text:
+              if (cursvgnode.nodeName === "text") {
+                inputs[i].value = cursvgnode.innerHTML;
+              }
+              break;
+            case enum_scale:
+              if (cursvgnode.nodeName === "image") {
+                const scalevalue = cursvgnode.getAttribute("transform").replace(/[^0-9.]/g, "");
+                inputs[i].value = scalevalue;
+              }
+              break;
+          }
+        });
+        // polyline用の処理
+        if (cursvgnode.nodeName === "polyline") {
+          const points = cursvgnode.getAttribute("points").trim().split(" ");
+          points.forEach(function (v, index) {
+            const values = v.split(",");
+            if (index === 0) {
+              inputs[enum_x1].value = values[0];
+              inputs[enum_y1].value = values[1];
+            } else if (index === 1) {
+              inputs[enum_x2].value = values[0];
+              inputs[enum_y2].value = values[1];
+            } else {
+              console.log(values);
+              inputs[enum_x3].value = values[0];
+              inputs[enum_y3].value = values[1];
+            }
+          });
+        }
+      }
+    });
   }
 
   // Handle messages sent from the extension to the webview
