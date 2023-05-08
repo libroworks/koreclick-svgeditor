@@ -2,6 +2,8 @@ import * as vscode from "vscode";
 import { getNonce } from "./util";
 
 export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider {
+  selectedIndex: number;
+
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new KoreClickEditorProvider(context);
     const providerRegistration = vscode.window.registerCustomEditorProvider(KoreClickEditorProvider.viewType, provider);
@@ -12,9 +14,9 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
 
   private static readonly scratchCharacters = ["😸", "😹", "😺", "😻", "😼", "😽", "😾", "🙀", "😿", "🐱"];
 
-  private static baseUrl = "http://localhost:8800/";
-
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) {
+    this.selectedIndex = -1;
+  }
 
   /**
    * Called when our custom editor is opened.
@@ -32,13 +34,12 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
     };
     webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
-    function updateWebview() {
+    function updateWebview(selectedIndex: number) {
       webviewPanel.webview.postMessage({
         type: "update",
         text: document.getText(),
         svguri: document.uri.toString(),
-        // `${KoreClickEditorProvider.baseUrl}test.svg`,
-        // document.uri.toString(),
+        lastSelect: selectedIndex,
       });
     }
 
@@ -52,7 +53,7 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
 
     const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e) => {
       if (e.document.uri.toString() === document.uri.toString()) {
-        updateWebview();
+        updateWebview(this.selectedIndex);
       }
     });
 
@@ -64,17 +65,19 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
     // Receive message from the webview.
     webviewPanel.webview.onDidReceiveMessage((e) => {
       switch (e.type) {
-        case "add":
-          this.addNewScratch(document);
+        case "update":
+          this.updateTextDocument(document, e.text);
+          this.selectedIndex = e.lastSelect; /*意味ないかも…… */
+          console.log(`getlastselect is ${e.lastSelect}`);
           return;
-
-        case "delete":
-          this.deleteScratch(document, e.id);
+        case "select" /*意味ないかも…… */:
+          this.selectedIndex = e.lastSelect;
+          console.log(`getlastselect is ${e.lastSelect}`);
           return;
       }
     });
 
-    updateWebview();
+    updateWebview(this.selectedIndex);
   }
 
   /**
@@ -102,7 +105,7 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
         Use a content security policy to only allow loading images from https or from our extension directory,
         and only allow scripts that have a specific nonce.
         -->
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="${styleResetUri}" rel="stylesheet" />
         <link href="${styleVSCodeUri}" rel="stylesheet" />
@@ -121,32 +124,32 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
             <div class="kc-inspector">
               <label id="kcins-type">type</label>
               <label>class</label>
-              <input id="kcins-class" type="text" placeholder="class name"/>
+              <input id="kcins-class" type="text" placeholder="class name" disabled/>
               <label>x1</label>
-              <input id="kcins-x1" type="number" step="0.1" placeholder="0"/>
+              <input id="kcins-x1" type="number" step="0.1" placeholder="0" disabled/>
               <label>y1</label>
-              <input id="kcins-y1" type="number" step="0.1" placeholder="0"/>
+              <input id="kcins-y1" type="number" step="0.1" placeholder="0" disabled/>
               <label>x2</label>
-              <input id="kcins-x2" type="number" step="0.1" placeholder="0"/>
+              <input id="kcins-x2" type="number" step="0.1" placeholder="0" disabled/>
               <label>y2</label>
-              <input id="kcins-y2" type="number" step="0.1" placeholder="0"/>
+              <input id="kcins-y2" type="number" step="0.1" placeholder="0" disabled/>
               <label>x3</label>
-              <input id="kcins-x3" type="number" step="0.1" placeholder="0"/>
+              <input id="kcins-x3" type="number" step="0.1" placeholder="0" disabled/>
               <label>y3</label>
-              <input id="kcins-y3" type="number" step="0.1" placeholder="0"/>
+              <input id="kcins-y3" type="number" step="0.1" placeholder="0" disabled/>
               <label>w</label>
-              <input id="kcins-w" type="number" step="0.1" placeholder="0"/>
+              <input id="kcins-w" type="number" step="0.1" placeholder="0" disabled/>
               <label>h</label>
-              <input id="kcins-h" type="number" step="0.1" placeholder="0"/>
+              <input id="kcins-h" type="number" step="0.1" placeholder="0" disabled/>
               <div class="kc-console-row">
                 <label>imgsrc</label>
-                <input id="kcins-imgpath" type="file"/>
+                <input id="kcins-imgpath" type="file" disabled/>
                 <label>scale</label>
-                <input id="kcins-scale" type="number" step="0.1" placeholder="0"/>
+                <input id="kcins-scale" type="number" step="0.1" placeholder="0" disabled/>
               </div>
               <div class="kc-console-row">
                 <label>text</label>
-                <input id="kcins-text" type="text" placeholder="<tspan>❶</tspan>これをクリック"/>
+                <input id="kcins-text" type="text" placeholder="<tspan>❶</tspan>これをクリック" disabled/>
               </div>
             </div>
             <div class="kc-toolbox">
@@ -167,62 +170,14 @@ export class KoreClickEditorProvider implements vscode.CustomTextEditorProvider 
   }
 
   /**
-   * Add a new scratch to the current document.
-   */
-  private addNewScratch(document: vscode.TextDocument) {
-    const json = this.getDocumentAsJson(document);
-    const character = KoreClickEditorProvider.scratchCharacters[Math.floor(Math.random() * KoreClickEditorProvider.scratchCharacters.length)];
-    json.scratches = [
-      ...(Array.isArray(json.scratches) ? json.scratches : []),
-      {
-        id: getNonce(),
-        text: character,
-        created: Date.now(),
-      },
-    ];
-
-    return this.updateTextDocument(document, json);
-  }
-
-  /**
-   * Delete an existing scratch from a document.
-   */
-  private deleteScratch(document: vscode.TextDocument, id: string) {
-    const json = this.getDocumentAsJson(document);
-    if (!Array.isArray(json.scratches)) {
-      return;
-    }
-
-    json.scratches = json.scratches.filter((note: any) => note.id !== id);
-
-    return this.updateTextDocument(document, json);
-  }
-
-  /**
-   * Try to get a current document as json text.
-   */
-  private getDocumentAsJson(document: vscode.TextDocument): any {
-    const text = document.getText();
-    if (text.trim().length === 0) {
-      return {};
-    }
-
-    try {
-      return JSON.parse(text);
-    } catch {
-      throw new Error("Could not get document as json. Content is not valid json");
-    }
-  }
-
-  /**
    * Write out the json to a given document.
    */
-  private updateTextDocument(document: vscode.TextDocument, json: any) {
+  private updateTextDocument(document: vscode.TextDocument, svgtext: any) {
     const edit = new vscode.WorkspaceEdit();
 
     // Just replace the entire document every time for this example extension.
     // A more complete extension should compute minimal edits instead.
-    edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), JSON.stringify(json, null, 2));
+    edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), svgtext);
 
     return vscode.workspace.applyEdit(edit);
   }
